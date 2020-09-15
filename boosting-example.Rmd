@@ -1,0 +1,203 @@
+---
+title: "Boosting-Example"
+author: "Zihao Zhou"
+date: "8/21/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r warning=FALSE, message=FALSE}
+library(radiant)
+
+simdat <- simulater(
+  sequ = "x2 0 100", 
+  grid = "x1 0 6.5 0.1", 
+  form = "y = 10 + x1 * cos(pi * x1) - 0.1 * x2", 
+  seed = 1234
+)
+
+summary(simdat, dec = 4)
+```
+
+
+```{r}
+knitr::kable(simdat %>%
+  slice(1:10), align = 'c') 
+```
+
+
+
+```{r fig.width = 4, fig.height = 4, dpi = 244}
+visualize(
+  simdat, 
+  xvar = "x1", 
+  yvar = "y", 
+  type = "scatter", 
+  nrobs = -1, 
+  ylim = c(-5, 10),
+  custom = TRUE
+) +
+  geom_line(data = simdat, aes(x = x1, y = y), color = "blue")
+```
+
+
+
+
+
+```{r}
+result <- crtree(
+  simdat, 
+  rvar = "y", 
+  evar = "x1", 
+  type = "regression", 
+  cp = 0.1
+)
+
+
+
+pred <- predict(result, pred_data = simdat)
+
+simdat$pred_tree1 <- pred$Prediction
+
+simdat$resid_tree1 <-  simdat$y - pred$Prediction
+
+
+
+```
+
+
+```{r fig.width = 4, fig.height = 4, dpi = 244}
+visualize(
+  simdat, 
+  xvar = "x1", 
+  yvar = "pred_tree1", 
+  type = "line", 
+  ylim = c(-5, 10),
+  labs = list(y = "y"),
+  linecol = "blue",
+  custom = TRUE
+) +
+  geom_point(data = simdat, aes(x = x1, y = y), alpha = 0.5)
+```
+
+
+```{r}
+result <- crtree(
+  simdat, 
+  rvar = "resid_tree1", 
+  evar = "x1", 
+  type = "regression", 
+  cp = 0.1
+)
+summary(result, prn = TRUE)
+pred <- predict(result, pred_data = simdat)
+
+pred <- predict(result, pred_data = simdat)
+
+simdat$pred_tree2 <- pred$Prediction
+
+simdat$resid_tree2 <-  simdat$y - pred$Prediction
+
+
+```
+
+
+
+```{r fig.width = 4, fig.height = 4, dpi = 244}
+visualize(
+  simdat, 
+  xvar = "x1", 
+  yvar = "pred_tree2", 
+  type = "line", 
+  ylim = c(-5, 10),
+  labs = list(y = "y"),
+  linecol = "blue",
+  custom = TRUE
+) +
+  geom_point(data = simdat, aes(x = x1, y = resid_tree1), alpha = 0.5)
+```
+
+
+```{r}
+result <- crtree(
+  simdat, 
+  rvar = "resid_tree2", 
+  evar = "x1", 
+  type = "regression", 
+  cp = 0.08
+)
+summary(result, prn = TRUE)
+
+pred <- predict(result, pred_data = simdat)
+
+simdat$pred_tree3 <- pred$Prediction
+
+simdat$resid_tree3 <-  simdat$y - pred$Prediction
+```
+
+```{r fig.width = 4, fig.height = 4, dpi = 244}
+visualize(
+  simdat, 
+  xvar = "x1", 
+  yvar = "pred_tree3", 
+  type = "line", 
+  ylim = c(-5, 10),
+  labs = list(y = "y"),
+  linecol = "blue",
+  custom = TRUE
+) +
+  geom_point(data = simdat, aes(x = x1, y = resid_tree2), alpha = 0.5)
+```
+
+
+```{r fig.width = 4, fig.height = 4, dpi = 244}
+simdat <- mutate(
+  simdat,
+  prediction = pred_tree1 + pred_tree2 + pred_tree3
+)
+
+visualize(
+  simdat, 
+  xvar = "x1", 
+  yvar = "prediction", 
+  type = "line", 
+  ylim = c(-5, 10),
+  labs = list(y = "y"),
+  linecol = "blue",
+  custom = TRUE
+) +
+  geom_point(data = simdat, aes(x = x1, y = y), alpha = 0.5)
+```
+
+Learning rates are generally set well below 1 in practice, but, as you can tell from the plot below that would require building many more trees to get a good fit to the data. The upside of a smaller learning rate is that we are less likely to overfit 
+
+```{r fig.width = 4, fig.height = 4, dpi = 244}
+simdat <- mutate(
+  simdat,
+  prediction = pred_tree1 + 0.1 * pred_tree2 + 0.1 * pred_tree3
+)
+
+visualize(
+  simdat, 
+  xvar = "x1", 
+  yvar = "prediction", 
+  type = "line", 
+  ylim = c(-5, 10),
+  labs = list(y = "y"),
+  linecol = "blue",
+  custom = TRUE
+) +
+  geom_point(data = simdat, aes(x = x1, y = y), alpha = 0.5)
+```
+
+
+
+
+
+
+
+
+
+
+
